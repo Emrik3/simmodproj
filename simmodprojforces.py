@@ -6,7 +6,7 @@ from ctypes import c_float, c_int32, cast, byref, POINTER
 def invsqrt(number):
     threehalfs = 1.5
     x2 = number * 0.5
-    y = c_float(number)
+    y = c_float(number) 
 
     i = cast(byref(y), POINTER(c_int32)).contents.value
     i = c_int32(0x5f3759df - (i >> 1))
