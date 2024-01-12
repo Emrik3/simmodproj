@@ -16,7 +16,7 @@ def invsqrt(number):
     return y
 
 
-@nmb.jit(nopython=True)
+#@nmb.jit(nopython=True)
 def acc(m, G, pos1, pos2, hat):
     rsq = (pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2
     a = G * m / rsq
