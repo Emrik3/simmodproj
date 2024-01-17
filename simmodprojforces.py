@@ -27,6 +27,6 @@ def acc(m, G, pos1, pos2, hat):
 def hat(pos1, pos2):
     x = pos1[0] - pos2[0]
     y = pos1[1] - pos2[1]
-    inv = invsqrt(x ** 2 + y ** 2)
+    inv = (x ** 2 + y ** 2)**-.5
     return np.array([x * inv, y * inv])
 
