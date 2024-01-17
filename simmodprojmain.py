@@ -290,7 +290,42 @@ class Simulator():
             self.asteroid.y.append(holda[0][1])
 
 
+    def verlet(self):
+        for i in range(0,self.N):
+            self.timelist.append(i * self.dt / (3600 * 24))
+            hata = -fo.hat(self.asteroid.poslist[i], np.array([0, 0]))
+            self.asteroid.poslist.append(np.add(self.asteroid.poslist[i], self.dt * np.add(self.asteroid.v[i], self.dt/2 * fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
             
+            hatanew = -fo.hat(self.asteroid.poslist[i+1], np.array([0, 0]))
+            self.asteroid.v.append(np.add(self.asteroid.v[i], self.dt * 1/2*np.add(fo.acc(self.sun.mass, G, self.asteroid.poslist[i+1], np.array([0, 0]), hatanew), fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
+            
+            for planet in self.planets:
+                # TODO: adding the wrong acceleration because a(i+1) is calculated after
+                hat2 = -fo.hat(planet.poslist[i], self.asteroid.poslist[i])
+                hat = -fo.hat(planet.poslist[i], np.array([0, 0]))
+                planet.poslist.append(np.add(planet.poslist[i], self.dt * np.add(planet.v[i], self.dt/2 * np.add(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2)))))
+                
+                hat2new = -fo.hat(planet.poslist[i+1], self.asteroid.poslist[i+1])
+                hatnew = -fo.hat(planet.poslist[i+1], np.array([0, 0]))
+                planet.v.append(np.add(planet.v[i], self.dt * 1/2*np.add(fo.acc(self.sun.mass, G, planet.poslist[i+1], np.array([0, 0]), hatnew), fo.acc(self.asteroid.mass, G, planet.poslist[i+1], self.asteroid.poslist[i+1], hat2new)), np.add(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2))))
+                
+                hold = [planet.v[i+1], planet.poslist[i+1]]
+                planet.x.append(hold[1][0])
+                planet.y.append(hold[1][1])
+
+
+
+                hata = -fo.hat(self.asteroid.poslist[i], planet.poslist[i])
+                self.asteroid.poslist[i+1] += np.add(self.asteroid.poslist[i], self.dt * np.add(self.asteroid.v[i], self.dt/2 * fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata)))
+                
+                hatanew = -fo.hat(self.asteroid.poslist[i+1], planet.poslist[i+1])
+                self.asteroid.v.append(np.add(self.asteroid.v[i], self.dt * 1/2*np.add(fo.acc(planet.mass, G, self.asteroid.poslist[i+1], planet.poslist[i+1], hatanew), fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata))))
+            
+            self.asteroid.x.append(self.asteroid.poslist[i+1][0])
+            self.asteroid.y.append(self.asteroid.poslist[i+1][1])      
+            print(fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata))    
+            # TODO: Way to large numbers very qick, some mator error somewhare to spot!!! Somewhare in this verlet code or verlet just does not work but it shoud so somthing wrong probobly
+            # TODO: Also remember to try and fix RK4 code!!!
     
     def solarsys_anim_no_trail(self, frames_per_update, axmin, axmax):
 
@@ -458,7 +493,7 @@ def initialize_planets():
     return planets, sun
 
 
-def accuracy_test():
+def accuracy_test_RK4():
     final_posx = []
     final_posy = []
     finalxdiff = []
@@ -496,6 +531,22 @@ def accuracy_test():
     print("Accuracy y: " + str(np.log2(finalydiff[2]/finalydiff[1])))
     print("Accuracy: " + str(np.log2(finaldiff[2]/finaldiff[1])))
 
+
+def run_verlet():
+    planets, sun = initialize_planets()
+    asteroid = Planet(10**29, 250 * 10 ** 9, np.array([5000, 0]), np.pi/2)
+    # TODO: Velocity for asteroid too large
+
+    axmin = [-250 * 10 ** 9, -250 * 10 ** 9]
+    axmax = [250 * 10 ** 9, 250 * 10 ** 9]
+
+    # TODO: Add setting that follows the earths path instead of entire window
+
+    sim = Simulator(sun, planets, asteroid, dt=2*360, T = 3600*24*366)
+    sim.verlet()
+    sim.solarsys_anim_no_trail(100, axmin, axmax)
+
+
 def main():
     # # TODO: Fix the nmb.jit thing in other file!!!
     # planets, sun = initialize_planets()
@@ -510,8 +561,8 @@ def main():
     # sim = Simulator(sun, planets, asteroid, dt=2*360, T = 3600*24*366)
     # sim.RK4()
     # sim.solarsys_anim_no_trail(100, axmin, axmax)
-    accuracy_test()
-
+    #accuracy_test_RK4()
+    run_verlet()
 
 
 
