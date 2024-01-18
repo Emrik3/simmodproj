@@ -294,27 +294,41 @@ class Simulator():
         for i in range(0,self.N):
             self.timelist.append(i * self.dt / (3600 * 24))
             hata = -fo.hat(self.asteroid.poslist[i], np.array([0, 0]))
-            self.asteroid.poslist.append(np.add(self.asteroid.poslist[i], self.dt * np.add(self.asteroid.v[i], self.dt/2 * fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
-            
-            hatanew = -fo.hat(self.asteroid.poslist[i+1], np.array([0, 0]))
-            self.asteroid.v.append(np.add(self.asteroid.v[i], self.dt * 1/2*np.add(fo.acc(self.sun.mass, G, self.asteroid.poslist[i+1], np.array([0, 0]), hatanew), fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
-            
+            self.asteroid.poslist.append(np.add(self.asteroid.poslist[i],
+                                                 np.add(self.dt * self.asteroid.v[i],
+                                                                   self.dt * self.dt / 2 * fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
+
             for planet in self.planets:
-                # TODO: adding the wrong acceleration because a(i+1) is calculated after
                 hat2 = -fo.hat(planet.poslist[i], self.asteroid.poslist[i])
                 hat = -fo.hat(planet.poslist[i], np.array([0, 0]))
-                planet.poslist.append(np.add(planet.poslist[i], self.dt * np.add(planet.v[i], self.dt/2 * np.add(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2)))))
+                planet.poslist.append(np.add(planet.poslist[i],
+                                              np.add(self.dt * planet.v[i],
+                                                                np.add(self.dt * self.dt / 2 * fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat),
+                                                                                    self.dt * self.dt / 2 * fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2)))))
+                
+                hata = -fo.hat(self.asteroid.poslist[i], planet.poslist[i])
+                self.asteroid.poslist[i+1] += np.add(self.dt * self.asteroid.v[i],
+                                                                self.dt * self.dt / 2 * fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata))
                 
 
-                hata = -fo.hat(self.asteroid.poslist[i], planet.poslist[i])
-                self.asteroid.poslist[i+1] += self.dt * np.add(self.asteroid.v[i], self.dt/2 * fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata))
+
+            hatanew = -fo.hat(self.asteroid.poslist[i+1], np.array([0, 0]))
+            self.asteroid.v.append(np.add(self.asteroid.v[i],
+                                           np.add(self.dt / 2 * fo.acc(self.sun.mass, G, self.asteroid.poslist[i+1], np.array([0, 0]), hatanew),
+                                                                 self.dt / 2 * fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
+            
+            for planet in self.planets:
                 
                 hatanew = -fo.hat(self.asteroid.poslist[i+1], planet.poslist[i+1])
-                self.asteroid.v[i+1] += self.dt * 1/2*np.add(fo.acc(planet.mass, G, self.asteroid.poslist[i+1], planet.poslist[i+1], hatanew), fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata))
-
+                self.asteroid.v[i+1] += np.add(self.dt / 2 * fo.acc(planet.mass, G, self.asteroid.poslist[i+1], planet.poslist[i+1], hatanew),
+                                                              self.dt / 2 * fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata))
+                
                 hat2new = -fo.hat(planet.poslist[i+1], self.asteroid.poslist[i+1])
                 hatnew = -fo.hat(planet.poslist[i+1], np.array([0, 0]))
-                planet.v.append(np.add(planet.v[i], self.dt * 1/2*np.add(fo.acc(self.sun.mass, G, planet.poslist[i+1], np.array([0, 0]), hatnew), fo.acc(self.asteroid.mass, G, planet.poslist[i+1], self.asteroid.poslist[i+1], hat2new)), np.add(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2))))
+                planet.v.append(np.add(planet.v[i], np.add(self.dt / 2 * fo.acc(self.sun.mass, G, planet.poslist[i+1], np.array([0, 0]), hatnew),
+                                                                          self.dt / 2 * fo.acc(self.asteroid.mass, G, planet.poslist[i+1], self.asteroid.poslist[i+1], hat2new)),
+                                                                            np.add(self.dt / 2 * fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), 
+                                                                                   self.dt / 2 * fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2))))
                 hold = [planet.v[i+1], planet.poslist[i+1]]
                 planet.x.append(hold[1][0])
                 planet.y.append(hold[1][1])
@@ -327,6 +341,33 @@ class Simulator():
             # TODO: DO this by wring on paper the solution and then checking the code step by step,
             
     
+    def stromerverlet(self):
+        for i in range(0,self.N):
+            self.timelist.append(i * self.dt / (3600 * 24))
+            hata = -fo.hat(self.asteroid.poslist[i], np.array([0, 0]))
+            if i == 0:
+                self.asteroid.poslist.append(np.add(self.asteroid.poslist[i], self.dt * np.add(self.asteroid.v[i], self.dt/2 * fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
+            else:
+                self.asteroid.poslist.append(np.add(2*self.asteroid.poslist[i], np.add(-self.asteroid.poslist[i-1], (self.dt**2) * fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0, 0]), hata))))
+            
+            for planet in self.planets:
+                hat2 = -fo.hat(planet.poslist[i], self.asteroid.poslist[i])
+                hat = -fo.hat(planet.poslist[i], np.array([0, 0]))
+                hata = -fo.hat(self.asteroid.poslist[i], planet.poslist[i])
+                if i == 0:
+                    planet.poslist.append(np.add(planet.poslist[i], self.dt * np.add(planet.v[i], self.dt/2 * np.add(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2)))))
+                else:
+                    planet.poslist.append(np.add(2*planet.poslist[i],  np.add(-planet.poslist[i-1], self.dt**2 * np.add(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat), fo.acc(self.asteroid.mass, G, planet.poslist[i], self.asteroid.poslist[i], hat2)))))
+                
+                self.asteroid.poslist[i+1] += self.dt**2 * fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata)
+                
+                planet.x.append(planet.poslist[i+1][0])
+                planet.y.append(planet.poslist[i+1][1])
+
+
+            self.asteroid.x.append(self.asteroid.poslist[i+1][0])
+            self.asteroid.y.append(self.asteroid.poslist[i+1][1])    
+
     def solarsys_anim_no_trail(self, frames_per_update, axmin, axmax):
 
 
@@ -506,7 +547,7 @@ def accuracy_test_RK4():
         print(i)
         planets, sun = initialize_planets()
         asteroid = Planet(10**29, 250 * 10 ** 9, np.array([5000, 0]), np.pi/2)
-        sim = Simulator(sun, planets, asteroid, dt=i, T = 3600*24*300) 
+        sim = Simulator(sun, planets, asteroid, dt=i, T = 3600*32*100) 
         sim.RK4()
         final_posx.append(planets[3].poslist[-1][0])
         final_posy.append(planets[3].poslist[-1][1])
@@ -559,12 +600,12 @@ def accuracy_test_verlet():
         
         print(i)
         planets, sun = initialize_planets()
-        asteroid = Planet(10**29, 250 * 10 ** 9, np.array([5000, 0]), np.pi/2)
+        asteroid = Planet(10**1, 250 * 10 ** 9, np.array([5000, 0]), np.pi/2)
         sim = Simulator(sun, planets, asteroid, dt=i, T = 360*64*100) 
         sim.verlet()
         final_posx.append(planets[3].poslist[-1][0])
         final_posy.append(planets[3].poslist[-1][1])
-        if i != 90 and i != 360*16:
+        if i != 90 and i != 360*16 and i != 180:
             ilist.append(i)
             finalxdiff.append(abs(final_posx[-2] - final_posx[-1]))
             finalydiff.append(abs(final_posy[-2] - final_posy[-1]))
@@ -582,7 +623,7 @@ def accuracy_test_verlet():
 
     ilistsq = []
     for i in ilist:
-        ilistsq.append(i**4)
+        ilistsq.append(i**2 * 10**-5)
     plt.loglog(ilist, finaldiff)
     plt.loglog(ilist, ilistsq)
     plt.show()
