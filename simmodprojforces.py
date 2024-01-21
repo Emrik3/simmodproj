@@ -18,16 +18,10 @@ def invsqrt(number):
 
 #@nmb.jit(nopython=True)
 def acc(m, G, pos1, pos2):
-    hat = hat(pos1, pos2)
-    rsq = (pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2
-    a = -G * m / rsq
-    return np.array([a * hat[0], a*hat[1]])
-
-
-#@nmb.jit(nopython=True) # THis can be change to just calculating theta and stuff
-def hat(pos1, pos2):
     x = pos1[0] - pos2[0]
     y = pos1[1] - pos2[1]
-    inv = (x ** 2 + y ** 2)**-.5
-    return np.array([x * inv, y * inv])
+    rsq = x ** 2 + y ** 2
+    hat = np.array([x * rsq**-.5, y * rsq**-.5])
+    a = -G * m / rsq
+    return np.array([a * hat[0], a*hat[1]])
 
