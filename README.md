@@ -1,4 +1,4 @@
-# Simulating asteroid passing cloasly to the solar system
+# Simulating asteroid passing cloasly to the solar system (Not finished)
 ### Introduction
 In this simulation of the solar system the Runge-Kutta method and Verlet method will be used to simulate the behavois of planets when a massive asteroid passes though the solar system. The Runge-Kutta method is not finished yet because of small accuracy error. The Verlet method is the main method for simulating the problem because it is a better method for conserving energy in long simulations. The behavior and energy is analysied further using functions listed below and then the chaos of the system is analysed using difference evaluation.
 
