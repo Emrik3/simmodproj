@@ -90,24 +90,24 @@ class Simulator():
 
                 k1 =  self.dt * fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i])
                 k1tot += k1
-                k1v = self.dt * self.asteroid.v[i]
+                k1v = 0
                 k1vtot += k1v
 
 
-                k2 = self.dt * fo.acc(planet.mass, G, np.add(self.asteroid.poslist[i], k1v/2), planet.poslist[i])
+                k2 = self.dt * fo.acc(planet.mass, G, np.add(self.asteroid.poslist[i], np.add(self.dt*self.asteroid.v[i], k1v)/2), planet.poslist[i])
                 k2tot += k2
-                k2v = self.dt * np.add(self.asteroid.v[i], k1/2)
+                k2v = self.dt * k1/2
                 k2vtot += k2v
                 
 
-                k3 = self.dt * fo.acc(planet.mass, G, np.add(self.asteroid.poslist[i], k1v / 2), planet.poslist[i])
+                k3 = self.dt * fo.acc(planet.mass, G, np.add(self.asteroid.poslist[i], np.add(self.dt*self.asteroid.v[i], k2v)/2), planet.poslist[i])
                 k3tot += k3
-                k3v = self.dt * np.add(self.asteroid.v[i], k1 / 2)
+                k3v = self.dt * k2 / 2
                 k3vtot += k3v
 
-                k4 = self.dt * fo.acc(planet.mass, G, np.add(self.asteroid.poslist[i], k3v), planet.poslist[i])
+                k4 = self.dt * fo.acc(planet.mass, G, np.add(self.asteroid.poslist[i], np.add(self. dt * self.asteroid.v[i], k1v)), planet.poslist[i])
                 k4tot += k4
-                k4v = self.dt * np.add(self.asteroid.v[i], k3)
+                k4v = self.dt * k3
                 k4vtot += k4v
                 
 
@@ -488,11 +488,11 @@ def accuracy_test_RK4():
         
         print(i)
         planets, sun = initialize_planets()
-        asteroid = Planet(10**29, 250 * 10 ** 9, np.array([5000, 0]), np.pi/2)
+        asteroid = Planet(10**29, 230 * 10 ** 9, np.array([5000, 0]), np.pi/2)
         sim = Simulator(sun, planets, asteroid, dt=i, T = 360*32*100) 
         sim.RK4()
-        final_posx.append(planets[3].poslist[-1][0])
-        final_posy.append(planets[3].poslist[-1][1])
+        final_posx.append(planets[2].poslist[-1][0])
+        final_posy.append(planets[2].poslist[-1][1])
         if i != 360 and i != 360*32:
             ilist.append(i)
             finalxdiff.append(abs(final_posx[-2] - final_posx[-1]))
@@ -701,7 +701,7 @@ def diffeval(k):
 def sysen(k):
     planets, sun = initialize_planets()
     asteroid = Planet(10**29, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
-    sim = Simulator(sun, planets, asteroid, dt=36, T = 3600*24*100)
+    sim = Simulator(sun, planets, asteroid, dt=3600*12, T = 3600*24*3500)
     sim.verlet()
 
     pot_en = []
@@ -729,11 +729,12 @@ def sysen(k):
 
 
 def main():
+    #run_RK4()
     #accuracy_test_RK4()
     #accuracy_test_verlet() 
-    run_verlet()
+    #run_verlet()
     #posvstime(3)
-    #sysen(3)
+    sysen(3)
     #rvstime(3)
     #massvary(3)
     #diffeval(3)
