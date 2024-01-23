@@ -42,7 +42,7 @@ class Simulator():
         self.timelist = [0]
 
     def RK4(self):
-        # TODO: Försök fixa detta och om inget funkar gör via numpy arrays att allt görs via vektorer samtidigt.
+        # Not finished
         for i in range(0,self.N):
             self.timelist.append(i * self.dt / (3600 * 24))
 
@@ -122,6 +122,7 @@ class Simulator():
             self.asteroid.x.append(holda[1][0])
             self.asteroid.y.append(holda[1][1])
 
+
     def RK3helper(self):
         for i in range(0,3):
             
@@ -193,6 +194,7 @@ class Simulator():
 
 
     def AB4(self):
+        # Not finished
         self.RK3helper()
         
         for i in range(0, 3):
@@ -234,51 +236,6 @@ class Simulator():
             holda = [np.add(self.asteroid.poslist[i], self.dt * (55 * self.asteroid.v[i] - 59 * self.asteroid.v[i-1] + 37 * self.asteroid.v[i-2] - 9 * self.asteroid.v[i-3]) / 24),
                      np.add(self.asteroid.v[i], self.dt * (55*self.asteroid.a[i] - 59*self.asteroid.a[i-1] + 37*self.asteroid.a[i-2] - 9*self.asteroid.a[i-3]) / 24)]
             self.asteroid.v.append(holda[1]) 
-            
-            self.asteroid.poslist.append(holda[0])
-            self.asteroid.x.append(holda[0][0])
-            self.asteroid.y.append(holda[0][1])
-            
-    def AB4adaptive(self, constant):
-        self.RK3helper()
-        
-        for i in range(0, 3):
-            hata = -fo.hat(self.asteroid.poslist[i], np.array([0,0]))
-            atot = fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0,0]), hata)
-            for planet in self.planets:
-                hat = -fo.hat(planet.poslist[i], np.array([0, 0]))
-                planet.a.append(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0,0]), hat))
-                hata = -fo.hat(self.asteroid.poslist[i], planet.poslist[i])
-                atot += fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata)
-            self.asteroid.a.append(atot)
-            
-
-        for i in range(3, self.N):
-            hata = -fo.hat(self.asteroid.poslist[i], np.array([0,0]))
-            atot = fo.acc(self.sun.mass, G, self.asteroid.poslist[i], np.array([0,0]), hata)
-            for planet in self.planets:
-                self.dt = constant / planet.v[i]
-                
-                hat = -fo.hat(planet.poslist[i], (0, 0))
-                planet.a.append(fo.acc(self.sun.mass, G, planet.poslist[i], np.array([0, 0]), hat))
-                
-                hold = [np.add(planet.poslist[i], self.dt * (55 * planet.v[i] - 59 * planet.v[i-1] + 37 * planet.v[i-2] - 9 * planet.v[i-3]) / 24),
-                         np.add(planet.v[i], self.dt * (55*planet.a[i] - 59*planet.a[i-1] + 37*planet.a[i-2] - 9*planet.a[i-3]) / 24)]
-                planet.v.append(hold[1]) 
-                planet.poslist.append(hold[0])
-                planet.x.append(hold[0][0])
-                planet.y.append(hold[0][1])
-
-
-                hata = -fo.hat(self.asteroid.poslist[i], planet.poslist[i])
-                atot += fo.acc(planet.mass, G, self.asteroid.poslist[i], planet.poslist[i], hata)
-                
-            self.asteroid.a.append(atot)
-            
-            holda = [np.add(self.asteroid.poslist[i], self.dt * (55 * self.asteroid.v[i] - 59 * self.asteroid.v[i-1] + 37 * self.asteroid.v[i-2] - 9 * self.asteroid.v[i-3]) / 24),
-                     np.add(self.asteroid.v[i], self.dt * (55*self.asteroid.a[i] - 59*self.asteroid.a[i-1] + 37*self.asteroid.a[i-2] - 9*self.asteroid.a[i-3]) / 24)]
-            self.asteroid.v.append(holda[1]) 
-            
             
             self.asteroid.poslist.append(holda[0])
             self.asteroid.x.append(holda[0][0])
@@ -351,6 +308,7 @@ class Simulator():
 
             self.asteroid.x.append(self.asteroid.poslist[i+1][0])
             self.asteroid.y.append(self.asteroid.poslist[i+1][1])    
+
 
     def solarsys_anim_no_trail(self, frames_per_update, axmin, axmax):
 
@@ -559,17 +517,17 @@ def accuracy_test_RK4():
 
 def run_verlet():
     planets, sun = initialize_planets()
-    asteroid = Planet(10**29, 250 * 10 ** 9, np.array([21970, 0]), np.pi/2)
+    asteroid = Planet(10**29, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
     # TODO: Velocity for asteroid too large
 
-    axmin = [-250 * 10 ** 9, -250 * 10 ** 9]
-    axmax = [250 * 10 ** 9, 250 * 10 ** 9]
+    axmin = [-4560 * 10 ** 9, -4560 * 10 ** 9]
+    axmax = [4560 * 10 ** 9, 4560 * 10 ** 9]
 
     # TODO: Add setting that follows the earths path instead of entire window
 
     sim = Simulator(sun, planets, asteroid, dt=2*360, T = 3600*24*366)
     sim.verlet()
-    sim.solarsys_anim_no_trail(100, axmin, axmax)
+    sim.solarsys_anim_with_trail(100, axmin, axmax)
 
 
 def run_RK4():
@@ -633,7 +591,8 @@ def accuracy_test_verlet():
     #plt.savefig(title + ".pdf")
     plt.show()
 
-def posvstimestep():
+
+def posvstimestep(k):
     final_posx = []
     final_posy = []
     finalpos = []
@@ -643,11 +602,11 @@ def posvstimestep():
         
         print(i)
         planets, sun = initialize_planets()
-        asteroid = Planet(0, 250 * 10 ** 9, np.array([5000, 0]), np.pi/2)
+        asteroid = Planet(0, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
         sim = Simulator(sun, planets, asteroid, dt=i, T = 360*64*100) 
         sim.verlet()
-        final_posx.append(planets[3].poslist[-1][0])
-        final_posy.append(planets[3].poslist[-1][1])
+        final_posx.append(planets[k].poslist[-1][0])
+        final_posy.append(planets[k].poslist[-1][1])
         finalpos.append((final_posx[-1]**2 + final_posy[-1]**2)**.5)
 
 
@@ -655,12 +614,129 @@ def posvstimestep():
     plt.show() 
 
 
+def massvary(k):
+    final_posx = []
+    final_posy = []
+    finalpos = []
+    ilist = []
+    for i in np.linspace(10**30, 10**31, 20):
+        print(i)
+        ilist.append(i)
+        planets, sun = initialize_planets()
+        asteroid = Planet(i, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
+        sim = Simulator(sun, planets, asteroid, dt=2*360, T = 360*64*366) 
+        sim.verlet()
+        final_posx.append(planets[k].poslist[-1][0])
+        final_posy.append(planets[k].poslist[-1][1])
+        finalpos.append((final_posx[-1]**2 + final_posy[-1]**2)**.5)
+
+    fig, ax = plt.subplots()
+    ax.set_xlabel('mass [kg]', fontsize = 20)
+    ax.set_ylabel('position [m]', fontsize = 20)
+    ax.loglog(ilist, finalpos, label="x position")
+    ax.set_title("Position at time t", fontsize = 20)
+    plt.show() 
+
+
+def posvstime(k):
+    planets, sun = initialize_planets()
+    asteroid = Planet(10**29, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
+    sim = Simulator(sun, planets, asteroid, dt=2*360, T = 3600*24*366)
+    sim.verlet()
+    fig, ax = plt.subplots()
+    ax.set_xlabel('time [days]', fontsize = 20)
+    ax.set_ylabel('position [m]', fontsize = 20)
+    ax.plot(sim.timelist, planets[k].x, label="x position")
+    ax.plot(sim.timelist, planets[k].y, label="y position")
+    ax.set_title("Position at time t", fontsize = 20)
+    ax.legend()
+    #plt.savefig(title + ".pdf")
+    plt.show() 
+
+
+def rvstime(k):
+    planets, sun = initialize_planets()
+    asteroid = Planet(10**29, 230 * 10 ** 9, np.array([50000, 0]), np.pi/2)
+    sim = Simulator(sun, planets, asteroid, dt=2*360, T = 3600*24*366)
+    sim.verlet()
+    r = []
+    for i in range(len(asteroid.poslist)):
+        r.append((planets[k].x[i]**2 + planets[k].y[i]**2)**.5)
+    fig, ax = plt.subplots()
+    ax.set_xlabel('time [days]', fontsize = 20)
+    ax.set_ylabel('Distance from sun [m]', fontsize = 20)
+    ax.plot(sim.timelist, r, label="Distance from sun")
+    ax.set_title("Distance from sun at time t", fontsize = 20)
+    #ax.legend()
+    #plt.savefig(title + ".pdf")
+    plt.show() 
+
+
+def diffeval(k):
+    planets, sun = initialize_planets()
+    asteroid = Planet(10**29, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
+    sim = Simulator(sun, planets, asteroid, dt=2*360, T = 3600*24*1500)
+    sim.verlet()
+
+    planets2, sun2 = initialize_planets()
+    asteroid2 = Planet(10**29, 230 * 10 ** 9 + 1, np.array([21970, 0]), np.pi/2)
+    sim2 = Simulator(sun2, planets2, asteroid2, dt=2*360, T = 3600*24*1500)
+    sim2.verlet()
+
+    r = []
+    for i in range(len(asteroid.poslist)):
+        r.append(abs((planets[k].x[i]**2 + planets[k].y[i]**2)**.5 - (planets2[k].x[i]**2 + planets2[k].y[i]**2)**.5))
+
+
+    fig, ax = plt.subplots()
+    ax.set_xlabel('time [days]', fontsize = 20)
+    ax.set_ylabel('Distance from sun difference [m]', fontsize = 20)
+    ax.plot(sim.timelist, r, label="Distance from sun difference")
+    ax.set_title("Distance from sun at time t", fontsize = 20)
+    #ax.legend()
+    #plt.savefig(title + ".pdf")
+    plt.show() 
+
+
+def sysen(k):
+    planets, sun = initialize_planets()
+    asteroid = Planet(10**29, 230 * 10 ** 9, np.array([21970, 0]), np.pi/2)
+    sim = Simulator(sun, planets, asteroid, dt=36, T = 3600*24*100)
+    sim.verlet()
+
+    pot_en = []
+    kin_en = []
+    tot_en = []
+    for i in range(len(sim.timelist)):
+        r_sun = (planets[k].x[i]**2 + planets[k].y[i]**2)**.5
+        r_ast = ((planets[k].x[i] - asteroid.x[i])**2 + (planets[k].y[i] - asteroid.y[i])**2)**.5
+        v = (planets[k].v[i][0]**2 + planets[k].v[i][1]**2)**.5
+        pot_en.append(-G * planets[k].mass * (sun.mass / r_sun + asteroid.mass / r_ast))
+        kin_en.append(planets[k].mass * v**2 / 2)
+        tot_en.append(pot_en[-1] + kin_en[-1])
+    print(len(pot_en), len(kin_en), len(tot_en), len(sim.timelist))
+
+    fig, ax = plt.subplots()
+    ax.set_xlabel('time [days]', fontsize = 20)
+    ax.set_ylabel('Energy [J]', fontsize = 20)
+    ax.plot(sim.timelist, pot_en, label="Potential energy")
+    ax.plot(sim.timelist, kin_en, label="Kinetic energy")
+    ax.plot(sim.timelist, tot_en, label="Total energy")
+    ax.set_title("Energy at time t", fontsize = 20)
+    ax.legend()
+    #plt.savefig(title + ".pdf")
+    plt.show() 
+
+
 def main():
-    # TODO: Make a function that looks at different masses for asteroid and how much planets are effected
-    # TODO: Maybe also do this for different starting positions and different initial speeds!!!
     #accuracy_test_RK4()
-    accuracy_test_verlet() 
-    #run_verlet()
+    #accuracy_test_verlet() 
+    run_verlet()
+    #posvstime(3)
+    #sysen(3)
+    #rvstime(3)
+    #massvary(3)
+    #diffeval(3)
 
 # TODO: Clean up code!
 
